@@ -14,6 +14,7 @@ const { sendOtp } = require("./sms-sender");
 const { ObjectId, Client, collection } = require("./database");
 const { uploadFileImage, uploadFileVideo } = require("./S3");
 const { authentication, createToken } = require("./auth");
+const { hashPassword, hashCompare } = require("./hashPassword");
 const PORT = process.env.PORT || 8000;
 
 const io = new Server(server, {
@@ -42,6 +43,7 @@ io.on("connection", (socket) => {
         let set = await collection[1].insertOne({
           participants: [parseInt(RoomId.author), parseInt(RoomId.receiver)],
           createdAt: new Date(),
+          messages: [],
         });
         if (set) {
           let review = await collection[1]
@@ -115,28 +117,6 @@ io.on("connection", (socket) => {
       );
       if (update) {
         console.log(update);
-      }
-    } catch (error) {
-      console.log(error);
-    }
-  });
-  socket.on("delete-for-everyone", async (Message) => {
-    await Client.connect();
-    try {
-      let remove = await collection[1].findOneAndUpdate(
-        {
-          participants: {
-            $all: [Message.author, Message.receiver],
-          },
-        },
-        {
-          $pull: {
-            messages: { message_id: Message.message_id },
-          },
-        }
-      );
-      if (remove) {
-        console.log("Message Deleted");
       }
     } catch (error) {
       console.log(error);
@@ -223,10 +203,10 @@ app.get("/users", authentication, async (req, res) => {
 app.post("/signup", async (req, res) => {
   await Client.connect();
   try {
-    let digits = "0123456789";
+    let digits = "123456789";
     let Otp = "";
     for (let i = 0; i < 6; i++) {
-      Otp += digits[Math.floor(Math.random() * 10)];
+      Otp += digits[Math.floor(Math.random() * 9)];
     }
     if (Otp.length === 6) {
       let check = await collection[0]
@@ -235,7 +215,7 @@ app.post("/signup", async (req, res) => {
       if (check.length === 0) {
         let post = await collection[0].insertOne({
           Mobile: req.body.mobile,
-          Otp: Otp,
+          Otp: await hashPassword(Otp),
           Name: null,
           Profile: null,
           createdAt: new Date(),
@@ -248,7 +228,7 @@ app.post("/signup", async (req, res) => {
           {
             Mobile: req.body.mobile,
           },
-          { $set: { Otp: Otp } }
+          { $set: { Otp: await hashPassword(Otp) } }
         );
         if (post) {
           await sendOtp(Otp, req.body.mobile, res);
@@ -271,8 +251,8 @@ app.post("/verification/otp", async (req, res) => {
     let check = await collection[0]
       .find({ Mobile: parseInt(req.body.mobile) })
       .toArray();
-
-    if (check[0].Otp === req.body.otp) {
+    let compare = await hashCompare(req.body.otp, check[0].Otp);
+    if (compare) {
       let token = await createToken(req.body.mobile);
       if (token) {
         res.json({
@@ -351,7 +331,7 @@ app.post("/profile/set", async (req, res) => {
 });
 app.post("/save/contact", async (req, res) => {
   await Client.connect();
-  console.log(req.body);
+
   try {
     let post = await collection[0].findOneAndUpdate(
       { Mobile: parseInt(req.headers.mobile) },
