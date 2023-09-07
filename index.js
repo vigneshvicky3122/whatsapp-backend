@@ -326,7 +326,7 @@ app.post("/profile/set", async (req, res) => {
     await Client.close();
   }
 });
-app.post("/save/contact", async (req, res) => {
+app.post("/save/contact", authentication, async (req, res) => {
   await Client.connect();
 
   try {
@@ -338,6 +338,11 @@ app.post("/save/contact", async (req, res) => {
       res.json({
         statusCode: 200,
         message: "Contact Saved",
+      });
+    } else {
+      res.json({
+        statusCode: 401,
+        message: "Failed",
       });
     }
   } catch (error) {
