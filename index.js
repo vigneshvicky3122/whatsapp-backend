@@ -5,10 +5,7 @@ const app = express();
 const cors = require("cors");
 const http = require("http");
 const server = http.createServer(app);
-app.use(
-  express.json({ limit: "50mb", extended: true }),
-  cors({ origin: process.env.FRONTEND_URL })
-);
+app.use(express.json({ limit: "50mb", extended: true }), cors({ origin: "*" }));
 const { Server } = require("socket.io");
 const { sendOtp } = require("./sms-sender");
 const { ObjectId, Client, collection } = require("./database");
