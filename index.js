@@ -67,14 +67,7 @@ io.on("connection", (socket) => {
   });
   socket.on("send_message", async (Message) => {
     await Client.connect();
-    // let messageData = {
-    //   content: Message.messageData.content,
-    //   message_id: Message.messageData.message_id,
-    //   time: Message.messageData.time,
-    //   sender: Message.messageData.sender,
-    //   isRead: false,
-    //   isDelete: false,
-    // };
+
     try {
       let push = await collection[1].findOneAndUpdate(
         {
@@ -326,7 +319,7 @@ app.post("/profile/set", async (req, res) => {
     await Client.close();
   }
 });
-app.post("/save/contact",authentication, async (req, res) => {
+app.post("/save/contact", authentication, async (req, res) => {
   await Client.connect();
 
   try {
@@ -339,7 +332,7 @@ app.post("/save/contact",authentication, async (req, res) => {
         statusCode: 200,
         message: "Contact Saved",
       });
-    }else{
+    } else {
       res.json({
         statusCode: 401,
         message: "Failed",
