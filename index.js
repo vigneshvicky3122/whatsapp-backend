@@ -209,6 +209,7 @@ app.post("/signup", async (req, res) => {
           Name: null,
           Profile: null,
           createdAt: new Date(),
+          MyContacts:[],
         });
         if (post) {
           await sendOtp(Otp, req.body.mobile, res);
